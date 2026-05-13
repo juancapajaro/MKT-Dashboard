@@ -1,15 +1,276 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="theme-dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Barbarenas Marketing Dashboard</title>
-  <script>
-    // Redirect to the main dashboard
-    window.location.href = './barbarenas-dashboard_2.html';
-  </script>
+  <title>Dashboard Marketing — Barbarenas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>if(typeof Chart!=="undefined")Chart.defaults.animation=false;</script>
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <p>Redirigiendo al dashboard... Si no se redirige automáticamente, <a href="./barbarenas-dashboard_2.html">haz clic aquí</a>.</p>
+
+<div class="viz-menu">
+  <button class="vm-btn" onclick="toggleMenu()" aria-label="Menú">
+    <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+    </svg>
+  </button>
+  <div class="vm-drop" id="vmDrop">
+    <button onclick="cycleTheme()"><span id="themeIco">🌙</span><span id="themeLbl">Dark</span></button>
+    <button onclick="dlImage()"><span>📥</span><span>Descargar PNG</span></button>
+    <button onclick="window.print()"><span>🖨️</span><span>Imprimir / PDF</span></button>
+  </div>
+</div>
+
+<main>
+  <header class="header an d1">
+    <div class="header-left">
+      <div class="logo-wrap">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAIAAAAErfB6AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxo" alt="Barbarenas" style="width:38px;height:38px;">
+      </div>
+      <div class="header-title">
+        <h1>Marketing Dashboard</h1>
+        <p>Barbarenas · Eco Retreat · Puerto Escondido, Oaxaca</p>
+      </div>
+    </div>
+    <div class="date-bar">
+      <label>Período:</label>
+      <select id="selFrom" onchange="applyFilter()">
+        <option value="2025-03">Marzo 2025</option>
+        <option value="2025-04">Abril 2025</option>
+        <option value="2025-05" selected>Mayo 2025</option>
+      </select>
+      <span class="sep">→</span>
+      <select id="selTo" onchange="applyFilter()">
+        <option value="2025-03">Marzo 2025</option>
+        <option value="2025-04">Abril 2025</option>
+        <option value="2025-05" selected>Mayo 2025</option>
+      </select>
+      <span class="period-pill"><span class="period-dot"></span><span id="periodLbl">Abr → May</span></span>
+    </div>
+  </header>
+
+  <div class="csv-banner an d2">
+    <div class="csv-drop-zone" id="csvDropZone" onclick="document.getElementById('csvFileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="handleDrop(event)">
+      <div class="csv-drop-left">
+        <div class="csv-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+            <polyline points="9 15 12 12 15 15"/>
+          </svg>
+        </div>
+        <div class="csv-text">
+          <strong>Actualizar datos</strong> — arrastrá tu CSV aquí o hacé clic para seleccionar
+        </div>
+      </div>
+      <button class="csv-btn" onclick="event.stopPropagation();document.getElementById('csvFileInput').click()">
+        Cargar CSV
+      </button>
+    </div>
+    <div class="csv-status" id="csvStatus"></div>
+    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSV(this.files[0])">
+  </div>
+
+  <div class="hdivider"></div>
+
+  <div class="tab-bar an d3">
+    <button class="tab-btn active" onclick="showTab('resumen',this)">Resumen mensual</button>
+    <button class="tab-btn" onclick="showTab('diario',this)">Registro diario</button>
+    <button class="tab-btn" onclick="showTab('posts',this)">Posts &amp; métricas</button>
+  </div>
+
+  <div class="tab-section active container" id="tab-resumen">
+    <div class="kpi-grid">
+      <div class="kpi an d1"><div class="kpi-label">Total Posts</div>
+        <div class="kpi-value ac" id="kv-posts">—</div><div class="kpi-sub" id="ks-posts">—</div></div>
+      <div class="kpi an d2"><div class="kpi-label">Total Views</div>
+        <div class="kpi-value" id="kv-views">—</div><div class="kpi-sub">Total al mes / D1 desde mayo</div></div>
+      <div class="kpi an d3"><div class="kpi-label">Total Likes</div>
+        <div class="kpi-value" id="kv-likes">—</div><div class="kpi-sub">Acumulado período</div></div>
+      <div class="kpi an d4"><div class="kpi-label">Nuevos Seguidores</div>
+        <div class="kpi-value go" id="kv-followers">—</div><div class="kpi-sub">Registro diario</div></div>
+      <div class="kpi an d5"><div class="kpi-label">Total Saves</div>
+        <div class="kpi-value" id="kv-saves">—</div><div class="kpi-sub">Acumulado período</div></div>
+      <div class="kpi an d6"><div class="kpi-label">Stories registradas</div>
+        <div class="kpi-value" id="kv-stories">—</div><div class="kpi-sub">Historias contadas</div></div>
+    </div>
+
+    <div class="info-box an d3">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="18"/></svg>
+      <div><strong>Contexto de métricas:</strong> Posts anteriores al <strong>5 de mayo 2025</strong> muestran el <strong>total acumulado al mes del posteo</strong>. A partir del post <em>Community</em> registramos <strong>D1 · D3 · D7</strong> por separado.</div>
+    </div>
+
+    <div class="chart-grid rev">
+      <div class="chart-card"><div class="chart-title">Posts por mes</div>
+        <div class="chart-sub">Publicaciones en el período seleccionado</div>
+        <div class="cw"><canvas id="cMonthPosts"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Views totales por mes</div>
+        <div class="chart-sub">Total al mes (pre-mayo) · D1 desde mayo</div>
+        <div class="cw"><canvas id="cMonthViews"></canvas></div></div>
+    </div>
+
+    <div class="chart-card rev" style="margin-bottom:20px;">
+      <div class="chart-title">Engagement por mes — Likes · Shared · Saves · Comments</div>
+      <div class="chart-sub">Acumulado por mes</div>
+      <div class="legend">
+        <div class="legend-item"><div class="ld" style="background:#7d9c6e"></div>Likes</div>
+        <div class="legend-item"><div class="ld" style="background:#c4a96b"></div>Shared</div>
+        <div class="legend-item"><div class="ld" style="background:#a07090"></div>Saves</div>
+        <div class="legend-item"><div class="ld" style="background:#6090a0"></div>Comments</div>
+      </div>
+      <div class="cw-tall"><canvas id="cMonthMetrics"></canvas></div>
+    </div>
+
+    <div class="card rev">
+      <p class="sec-head">Tabla comparativa mensual</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Mes</th><th>Posts</th><th>Stories</th><th>Seguidores +</th><th>Views</th><th>Likes</th><th>Saves</th><th>Estado</th></tr></thead>
+        <tbody id="monthly-tbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="tab-section container" id="tab-diario">
+    <div id="daily-content">
+      <div class="chart-card" style="margin-bottom:18px;">
+        <div class="chart-title">Stories por día — Abril 2025</div>
+        <div class="chart-sub">Historias publicadas cada día</div>
+        <div class="cw-tall"><canvas id="cStoriesApr"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:18px;">
+        <div class="chart-title">Stories por día — Mayo 2025</div>
+        <div class="chart-sub">Datos hasta el día 8</div>
+        <div class="cw"><canvas id="cStoriesMay"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Nuevos seguidores por día — Abril &amp; Mayo</div>
+        <div class="chart-sub">Seguidores ganados por día registrado</div>
+        <div class="cw-tall"><canvas id="cFollowersDaily"></canvas></div>
+      </div>
+    </div>
+    <div class="no-data" id="daily-nodata" style="display:none">No hay datos diarios para el período seleccionado.</div>
+  </div>
+
+  <div class="tab-section container" id="tab-posts">
+    <div class="info-box" style="margin-bottom:14px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="18"/></svg>
+      <div>Posts antes del <strong>5-May-2025</strong>: métricas = <strong>total acumulado al mes</strong>. Desde <em>Community</em> (5-May): registramos <strong>D1 · D3 · D7</strong> por separado.</div>
+    </div>
+    <div class="day-toggle">
+      <span class="day-lbl">Métricas:</span>
+      <button class="day-btn active" onclick="setDay('D1',this)">D1 — Día 1</button>
+      <button class="day-btn" onclick="setDay('D3',this)">D3 — Día 3</button>
+      <button class="day-btn" onclick="setDay('D7',this)">D7 — Día 7</button>
+    </div>
+
+    <div class="chart-card rev" style="margin-bottom:16px;">
+      <div class="chart-title" id="ct-views">Views por post — D1 / Total al mes</div>
+      <div class="chart-sub">Reels en verde · Posts en dorado</div>
+      <div class="legend">
+        <div class="legend-item"><div class="ld" style="background:#7d9c6e"></div>Reel</div>
+        <div class="legend-item"><div class="ld" style="background:#c4a96b"></div>Post</div>
+      </div>
+      <div class="cw-tall"><canvas id="cPostViews"></canvas></div>
+    </div>
+
+    <div class="chart-grid rev" style="margin-bottom:16px;">
+      <div class="chart-card"><div class="chart-title" id="ct-likes">Likes por post</div>
+        <div class="cw"><canvas id="cPostLikes"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title" id="ct-saves">Saves por post</div>
+        <div class="cw"><canvas id="cPostSaves"></canvas></div></div>
+    </div>
+
+    <div class="card rev">
+      <p class="sec-head" id="tt-posts">Todos los posts — D1 / Total al mes</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Tema</th>
+          <th>Views</th><th>Likes</th><th>Comments</th><th>Shared</th><th>Saves</th>
+          <th>Fuente</th></tr></thead>
+        <tbody id="posts-tbody"></tbody>
+      </table></div>
+    </div>
+  </div>
+</main>
+
+<script src="csv-parser.js"></script>
+<script src="charts.js"></script>
+<script src="ui.js"></script>
+
+<script>
+// ══════════════════════════════════════════
+// BASE DATA (hardcoded, puede ser reemplazado por CSV)
+// ══════════════════════════════════════════
+var MONTH_NAMES_MAP = {"2025-03":"Marzo","2025-04":"Abril","2025-05":"Mayo"};
+
+var BASE_POSTS = [
+  {date:20,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"Culinary",       leg:true, d1:[1780,21,6,0,0,0],  d3:[],d7:[]},
+  {date:22,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"santuario",      leg:true, d1:[1246,13,2,1,2,0],  d3:[],d7:[]},
+  {date:23,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"santuario",      leg:true, d1:[902,13,0,0,0,0],   d3:[],d7:[]},
+  {date:24,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"santuario",      leg:true, d1:[1002,22,2,2,2,0],  d3:[],d7:[]},
+  {date:26,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"adobe bambu",    leg:true, d1:[1185,36,10,0,0,0], d3:[],d7:[]},
+  {date:29,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"Comunidad",      leg:true, d1:[1400,17,0,1,1,1],  d3:[],d7:[]},
+  {date:30,m:"Marzo",ym:"2025-03",tipo:"Reel",tema:"POV",            leg:true, d1:[1813,18,0,2,0,1],  d3:[],d7:[]},
+  {date:3, m:"Abril",ym:"2025-04",tipo:"Reel",tema:"testimonios",    leg:true, d1:[1417,22,4,5,1,1],  d3:[],d7:[]},
+  {date:7, m:"Abril",ym:"2025-04",tipo:"Reel",tema:"community",      leg:true, d1:[1240,27,0,4,0,0],  d3:[],d7:[]},
+  {date:10,m:"Abril",ym:"2025-04",tipo:"Post",tema:"culinary",       leg:true, d1:[1000,21,2,1,2,1],  d3:[],d7:[]},
+  {date:14,m:"Abril",ym:"2025-04",tipo:"Post",tema:"community girls",leg:true, d1:[7350,104,4,7,0,12],d3:[],d7:[]},
+  {date:16,m:"Abril",ym:"2025-04",tipo:"Reel",tema:"pov",            leg:true, d1:[900,24,0,1,1,1],   d3:[],d7:[]},
+  {date:22,m:"Abril",ym:"2025-04",tipo:"Post",tema:"nature/comunidad",leg:true,d1:[1536,45,0,0,0,2],  d3:[],d7:[]},
+  {date:27,m:"Abril",ym:"2025-04",tipo:"Post",tema:"curanderas",     leg:true, d1:[1200,28,4,1,1,0],  d3:[],d7:[]},
+  {date:28,m:"Abril",ym:"2025-04",tipo:"Reel",tema:"collab - vita",  leg:true, d1:[3000,61,13,3,0,1], d3:[],d7:[]},
+  {date:2, m:"Mayo", ym:"2025-05",tipo:"Reel",tema:"collab - maleia",leg:true, d1:[3000,null,null,null,null,null],d3:[],d7:[]},
+  {date:5, m:"Mayo", ym:"2025-05",tipo:"Post",tema:"Community",      leg:false,d1:[1038,15,2,4,0,1],  d3:[1205,17,2,4,0,1],d7:[]},
+  {date:8, m:"Mayo", ym:"2025-05",tipo:"Post",tema:"Yoga",           leg:false,d1:[null,null,null,null,null,null],d3:[],d7:[]},
+];
+
+var BASE_DAILY = {
+  "2025-03":[
+    {d:20,s:4,f:1},{d:22,s:3,f:3},{d:23,s:6,f:3},{d:24,s:6,f:2},{d:25,s:3,f:2},
+    {d:26,s:2,f:4},{d:27,s:4,f:3},{d:28,s:3,f:5},{d:29,s:4,f:1},{d:30,s:2,f:1},{d:31,s:0,f:3}
+  ],
+  "2025-04":[
+    {d:1,s:7,f:2},{d:2,s:2,f:1},{d:3,s:2,f:4},{d:4,s:3,f:0},{d:5,s:3,f:4},
+    {d:6,s:5,f:4},{d:7,s:3,f:2},{d:8,s:3,f:3},{d:9,s:9,f:1},{d:10,s:1,f:2},
+    {d:11,s:4,f:11},{d:12,s:4,f:8},{d:13,s:1,f:2},{d:14,s:5,f:4},{d:15,s:9,f:2},
+    {d:16,s:1,f:2},{d:17,s:1,f:2},{d:18,s:1,f:1},{d:19,s:1,f:1},{d:20,s:2,f:2},
+    {d:21,s:6,f:2},{d:22,s:4,f:0},{d:23,s:2,f:4},{d:24,s:5,f:2},{d:25,s:3,f:1},
+    {d:26,s:1,f:3},{d:27,s:2,f:2},{d:28,s:1,f:2},{d:29,s:2,f:1},{d:30,s:5,f:1}
+  ],
+  "2025-05":[
+    {d:1,s:9,f:2},{d:2,s:5,f:2},{d:3,s:1,f:3},{d:4,s:1,f:2},
+    {d:5,s:1,f:1},{d:6,s:7,f:4},{d:7,s:5,f:2},{d:8,s:1,f:4},{d:9,s:3,f:6},{d:10,s:5,f:2}
+  ]
+};
+
+var BASE_SUMMARY = {
+  "2025-03":{posts:7, stories:40, followers:28, views:9328,  likes:140,saves:2, comments:20,shared:6,  note:"Stories desde día 20"},
+  "2025-04":{posts:8, stories:101,followers:82, views:17643, likes:312,saves:17,comments:27,shared:22, note:"Datos completos"},
+  "2025-05":{posts:3, stories:33, followers:27, views:4038,  likes:15, saves:1, comments:2, shared:4,  note:"Hasta día 10 (en curso)"}
+};
+
+// Active data (replaced when CSV is loaded)
+var POSTS   = BASE_POSTS.slice();
+var DAILY   = JSON.parse(JSON.stringify(BASE_DAILY));
+var SUMMARY = JSON.parse(JSON.stringify(BASE_SUMMARY));
+var MONTH_NAMES = JSON.parse(JSON.stringify(MONTH_NAMES_MAP));
+
+var curDay="D1", fromYM="2025-04", toYM="2025-05";
+
+window.addEventListener("load",function(){
+  updateKPIs();buildMonthlyTable();
+  setTimeout(function(){
+    buildAll();window.dispatchEvent(new Event("resize"));
+    setTimeout(function(){document.querySelectorAll("#tab-resumen .rev").forEach(function(el){el.classList.add("vis");});},300);
+  },200);
+});
+</script>
 </body>
 </html>
