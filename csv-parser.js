@@ -38,7 +38,7 @@ function parseAndApplyCSV(text){
   // ── 1. Find separator
   var sep=",";
   for(var si=0;si<Math.min(lines.length,5);si++){
-    if(lines[si].includes(";")){sep=";";break;}
+    if(lines[si].includes(";")){ sep=";"; break; }
   }
 
   // ── 2. Find real header row (skip title/blank rows)
@@ -46,27 +46,27 @@ function parseAndApplyCSV(text){
   for(var hi=0;hi<Math.min(lines.length,8);hi++){
     var low=lines[hi].toLowerCase();
     if(low.includes("date")||low.includes("fecha")||low.includes("month")||low.includes("mes")){
-      headerIdx=hi;break;
+      headerIdx=hi; break;
     }
   }
   if(headerIdx===-1) throw new Error("No encontré fila de encabezados (Date/Fecha/Month/Mes)");
 
   // ── 3. Parse headers — normalize to lowercase, strip special chars
-  var rawHeaders=lines[headerIdx].split(sep).map(function(h){return h.trim();});
-  var headers=rawHeaders.map(function(h){return h.toLowerCase().replace(/[^a-z0-9]/g,"");});
+  var rawHeaders=lines[headerIdx].split(sep).map(function(h){ return h.trim(); });
+  var headers=rawHeaders.map(function(h){ return h.toLowerCase().replace(/[^a-z0-9]/g,""); });
 
-  var dataLines=lines.slice(headerIdx+1).filter(function(l){return l.trim();});
+  var dataLines=lines.slice(headerIdx+1).filter(function(l){ return l.trim(); });
   if(dataLines.length===0) throw new Error("Sin filas de datos debajo del encabezado");
 
   function idx(names){
     for(var ni=0;ni<names.length;ni++){
       var n=names[ni].toLowerCase().replace(/[^a-z0-9]/g,"");
-      var i=headers.indexOf(n);if(i!==-1)return i;
+      var i=headers.indexOf(n); if(i!==-1) return i;
     }
     return -1;
   }
-  function get(row,names){var i=idx(names);return i===-1?"":(row[i]||"").trim();}
-  function num(v){var n=parseFloat((v||"").replace(",","."));return isNaN(n)?null:n;}
+  function get(row,names){ var i=idx(names); return i===-1?"":(row[i]||"").trim(); }
+  function num(v){ var n=parseFloat((v||"").replace(",",".")); return isNaN(n)?null:n; }
 
   // Column index helpers — support Spanish + English names
   var iDate    = idx(["date","fecha"]);
@@ -96,7 +96,7 @@ function parseAndApplyCSV(text){
 
   function monthToYM(mStr){
     var k=mStr.toLowerCase().replace(/[^a-z]/g,"");
-    if(MMAP[k])return "2025-"+MMAP[k];
+    if(MMAP[k]) return "2025-"+MMAP[k];
     return null;
   }
 
@@ -108,11 +108,11 @@ function parseAndApplyCSV(text){
 
     var dateStr = iDate!==-1?(row[iDate]||"").trim():"";
     var monthStr= iMonth!==-1?(row[iMonth]||"").trim():"";
-    if(!dateStr&&!monthStr)continue;
+    if(!dateStr&&!monthStr) continue;
 
     // Resolve YM
     var ym=monthToYM(monthStr);
-    if(!ym)continue;
+    if(!ym) continue;
 
     var dayNum=parseInt(dateStr)||0;
     var fullDate=ym+"-"+(dayNum<10?"0":"")+dayNum;
@@ -135,10 +135,10 @@ function parseAndApplyCSV(text){
 
     var mmNum=ym.split("-")[1];
     var mNameES=MNAME_ES[mmNum]||monthStr;
-    if(!MONTH_NAMES[ym])MONTH_NAMES[ym]=mNameES;
+    if(!MONTH_NAMES[ym]) MONTH_NAMES[ym]=mNameES;
 
     // Daily data
-    if(!newDailyMap[ym])newDailyMap[ym]=[];
+    if(!newDailyMap[ym]) newDailyMap[ym]=[];
     if(stories!==null||folls!==null){
       newDailyMap[ym].push({d:dayNum,s:stories||0,f:folls||0});
     }
@@ -155,7 +155,7 @@ function parseAndApplyCSV(text){
     }
 
     // Summary accumulation
-    if(!newSummaryMap[ym])newSummaryMap[ym]={posts:0,stories:0,followers:0,views:0,likes:0,saves:0,comments:0,shared:0,note:"CSV importado"};
+    if(!newSummaryMap[ym]) newSummaryMap[ym]={posts:0,stories:0,followers:0,views:0,likes:0,saves:0,comments:0,shared:0,note:"CSV importado"};
     var sm=newSummaryMap[ym];
     if(tipoLow==="reel"||tipoLow==="post"){
       sm.posts+=1;sm.views+=v1||0;sm.likes+=l1||0;sm.saves+=sv1||0;sm.comments+=c1||0;sm.shared+=sh1||0;
@@ -179,7 +179,7 @@ function parseAndApplyCSV(text){
   allYMs.forEach(function(ym){if(!MONTH_NAMES[ym])MONTH_NAMES[ym]=ym;});
   rebuildSelectors(allYMs);
 
-  fromYM=allYMs[0];toYM=allYMs[allYMs.length-1];
+  fromYM=allYMs[0]; toYM=allYMs[allYMs.length-1];
   document.getElementById("selFrom").value=fromYM;
   document.getElementById("selTo").value=toYM;
 
@@ -191,11 +191,11 @@ function parseAndApplyCSV(text){
 
 function rebuildSelectors(yms){
   ["selFrom","selTo"].forEach(function(id){
-    var sel=document.getElementById(id),cur=sel.value;
+    var sel=document.getElementById(id), cur=sel.value;
     sel.innerHTML="";
     yms.forEach(function(ym){
       var o=document.createElement("option");
-      o.value=ym;o.textContent=MONTH_NAMES[ym]+" "+ym.split("-")[0];
+      o.value=ym; o.textContent=MONTH_NAMES[ym]+" "+ym.split("-")[0];
       sel.appendChild(o);
     });
     if(yms.indexOf(cur)!==-1)sel.value=cur;
